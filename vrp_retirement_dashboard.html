@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kamaljit — VRP Retirement Hub</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2335;
+    --border: #2a3048;
+    --accent: #4f8ef7;
+    --accent2: #7c5cbf;
+    --green: #2ecc8a;
+    --amber: #f5a623;
+    --red: #e05656;
+    --text: #e8ecf4;
+    --muted: #8892a8;
+    --small: #5f6b80;
+    --font-display: 'Georgia', 'Times New Roman', serif;
+    --font-body: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+
+  header { background: linear-gradient(135deg, #12162a 0%, #1a1f3a 50%, #161b2e 100%); border-bottom: 1px solid var(--border); padding: 28px 40px 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .header-left h1 { font-family: var(--font-display); font-size: 26px; font-weight: normal; }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .header-right { display: flex; gap: 12px; flex-wrap: wrap; }
+  .countdown-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 120px; }
+  .countdown-box .days { font-size: 32px; font-weight: 700; color: var(--amber); line-height: 1; font-family: var(--font-mono); }
+  .countdown-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 3px; }
+
+  nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; display: flex; gap: 2px; overflow-x: auto; }
+  nav button { background: none; border: none; color: var(--muted); padding: 14px 14px; font-size: 13px; font-family: var(--font-body); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 40px 60px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .section-title { font-family: var(--font-display); font-size: 20px; font-weight: normal; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .section-title small { font-family: var(--font-body); font-size: 12px; color: var(--muted); margin-left: 10px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+  .card-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .card-row .card { flex: 1; margin-bottom: 0; }
+
+  .subsection-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 12px; }
+
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li.done .item-text { opacity: 0.45; text-decoration: line-through; }
+  .checklist input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+  .item-text { flex: 1; }
+  .item-text strong { display: block; font-size: 14px; }
+  .item-text span { font-size: 12px; color: var(--muted); }
+  .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; margin-top: 3px; }
+  .badge-red { background: rgba(224,86,86,.15); color: var(--red); border: 1px solid rgba(224,86,86,.3); }
+  .badge-amber { background: rgba(245,166,35,.15); color: var(--amber); border: 1px solid rgba(245,166,35,.3); }
+  .badge-green { background: rgba(46,204,138,.15); color: var(--green); border: 1px solid rgba(46,204,138,.3); }
+  .badge-blue { background: rgba(79,142,247,.15); color: var(--accent); border: 1px solid rgba(79,142,247,.3); }
+
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 0 0 20px 20px; }
+  .tl-item::before { content: ''; position: absolute; left: -6px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); }
+  .tl-item.passed::before { background: var(--green); border-color: var(--green); }
+  .tl-item.urgent::before { background: var(--red); border-color: var(--red); animation: pulse 1.5s infinite; }
+  .tl-item.upcoming::before { background: var(--accent); border-color: var(--accent); }
+  .tl-item.future::before { background: var(--surface2); border-color: var(--amber); }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(224,86,86,.4)} 50%{box-shadow:0 0 0 5px rgba(224,86,86,0)} }
+  .tl-date { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .tl-title { font-size: 14px; font-weight: 600; margin: 2px 0; }
+  .tl-desc { font-size: 13px; color: var(--muted); }
+
+  .benefit-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+  .benefit-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; }
+  .benefit-item .bi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 4px; }
+  .benefit-item .bi-value { font-size: 22px; font-weight: 700; color: var(--accent); font-family: var(--font-mono); }
+  .benefit-item .bi-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .num { font-family: var(--font-mono); text-align: right; }
+  .green-text { color: var(--green); font-weight: 600; }
+  .amber-text { color: var(--amber); font-weight: 600; }
+  .red-text { color: var(--red); }
+
+  .qa-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .qa-q { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; cursor: pointer; background: var(--surface); font-size: 14px; font-weight: 500; gap: 12px; user-select: none; }
+  .qa-q:hover { background: var(--surface2); }
+  .qa-q .arrow { color: var(--muted); flex-shrink: 0; transition: transform .2s; font-size: 12px; }
+  .qa-q.open .arrow { transform: rotate(90deg); }
+  .qa-a { display: none; padding: 14px 18px 16px; background: var(--surface2); font-size: 13px; color: var(--muted); line-height: 1.7; border-top: 1px solid var(--border); }
+  .qa-a.visible { display: block; }
+  .qa-a strong { color: var(--text); }
+  .qa-a .highlight { background: rgba(79,142,247,.1); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+
+  .note-box { background: rgba(245,166,35,.07); border: 1px solid rgba(245,166,35,.25); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+  .note-box strong { color: var(--amber); }
+  .info-box { background: rgba(79,142,247,.07); border: 1px solid rgba(79,142,247,.25); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .info-box strong { color: var(--accent); }
+  .warn-box { background: rgba(224,86,86,.07); border: 1px solid rgba(224,86,86,.25); border-radius: 8px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin-top: 12px; }
+  .warn-box strong { color: var(--red); }
+
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-track { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .3s ease; }
+
+  /* Vest chart bar */
+  .vest-bar-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .vest-bar-row:last-child { border-bottom: none; }
+  .vest-bar-date { font-size: 12px; color: var(--muted); width: 95px; flex-shrink: 0; font-family: var(--font-mono); }
+  .vest-bar-track { flex: 1; background: var(--border); border-radius: 3px; height: 20px; overflow: hidden; position: relative; }
+  .vest-bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; transition: width .4s ease; }
+  .vest-bar-fill.retirement { background: linear-gradient(90deg, #2ecc8a, #1ab87a); }
+  .vest-bar-fill.vrp-window { background: linear-gradient(90deg, #4f8ef7, #3a7ae8); }
+  .vest-bar-value { font-size: 12px; color: var(--muted); width: 80px; text-align: right; flex-shrink: 0; font-family: var(--font-mono); }
+  .vest-bar-shares { font-size: 11px; color: var(--small); width: 55px; text-align: right; flex-shrink: 0; }
+  .vest-year-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); margin: 16px 0 6px; }
+
+  @media(max-width:700px){
+    header{padding:20px;flex-direction:column;align-items:flex-start;}
+    main{padding:20px;}
+    nav{padding:0 16px;}
+    .card-row{flex-direction:column;}
+    .benefit-grid{grid-template-columns:1fr;}
+  }
+
+  /* ── Overdue items ── */
+  .checklist li.overdue .item-text strong::after {
+    content: ' — OVERDUE';
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    animation: blink 2s infinite;
+  }
+  .checklist li.overdue { background: rgba(224,86,86,0.04); border-radius: 6px; padding-left: 8px; margin-left: -8px; }
+  .checklist li.overdue .badge-red { background: rgba(224,86,86,0.3); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .checklist li.done.overdue .item-text strong::after { display: none; }
+  .checklist li.done.overdue { background: none; animation: none; }
+  .checklist li.done.overdue .badge-red { animation: none; }
+
+  #save-pill {
+    position: fixed; bottom: 16px; right: 16px; z-index: 100;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4); display: flex; gap: 10px; align-items: center;
+  }
+  #save-pill .pill-status { color: var(--muted); }
+  #save-pill button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 12px; padding: 2px 10px; font-size: 11px; cursor: pointer; }
+  #save-pill button:hover { border-color: var(--accent); color: var(--accent); }
+  #save-pill input[type=file] { display: none; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Kamaljit Bath — <span>VRP Retirement Hub</span></h1>
+    <p>Microsoft Voluntary Retirement Program · Separation Date: July 2, 2026</p>
+  </div>
+  <div class="header-right">
+    <div class="countdown-box">
+      <div class="days" id="cd-days">—</div>
+      <div class="label" id="cd-label">days to July 1</div>
+    </div>
+    <div class="countdown-box">
+      <div class="days" style="color:var(--red)" id="cd-vrsar">—</div>
+      <div class="label">days to sign VRSAR</div>
+    </div>
+    <div class="countdown-box" style="min-width:110px">
+      <div class="days" style="color:var(--accent2);font-size:22px" id="cd-kamaljit">—</div>
+      <div class="label">days to Kamaljit 65</div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('overview',this)">Overview</button>
+  <button onclick="switchTab('todo-before',this)">✅ Before July 1</button>
+  <button onclick="switchTab('todo-after',this)">📋 After Retiring</button>
+  <button onclick="switchTab('timeline',this)">📅 Timeline</button>
+  <button onclick="switchTab('benefits',this)">💰 Benefits</button>
+  <button onclick="switchTab('stock',this)">📈 Stock Vesting</button>
+  <button onclick="switchTab('dcp',this)">🏦 DCP</button>
+  <button onclick="switchTab('qa',this)">❓ Q&amp;A</button>
+</nav>
+
+<main>
+
+<!-- ══════ OVERVIEW ══════ -->
+<div id="overview" class="tab-content active">
+  <h2 class="section-title">Your Retirement at a Glance</h2>
+
+  <div class="card-row">
+    <div class="card">
+      <div class="subsection-title">Cash Lump Sum</div>
+      <div style="font-size:30px;font-weight:700;color:var(--green);font-family:var(--font-mono)">39 weeks</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">of base pay · by end of July 2026</div>
+      <div style="font-size:12px;color:var(--small);margin-top:6px">Level 65–67: 2 wks per 6 months · 39-week maximum reached</div>
+    </div>
+    <div class="card">
+      <div class="subsection-title">Healthcare</div>
+      <div style="font-size:30px;font-weight:700;color:var(--accent);font-family:var(--font-mono)">5 years</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">COBRA (18 mo) + VRP Extended (42 mo)</div>
+      <div style="font-size:12px;color:var(--small);margin-top:6px">Year 1 free · Year 2–5 self-pay COBRA rates</div>
+    </div>
+    <div class="card">
+      <div class="subsection-title">Total Unvested Stock</div>
+      <div style="font-size:30px;font-weight:700;color:var(--accent2);font-family:var(--font-mono)">1,020 sh</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">936 vest · 162 FY25 forfeited post Jul 2027</div>
+      <div style="font-size:12px;color:var(--small);margin-top:6px">~$375K est @ $401/sh · spread across 2026–2029</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Overall Task Progress</div>
+    <div class="progress-header">
+      <span style="font-size:13px;color:var(--muted)" id="progress-text">0 of 0 tasks completed</span>
+      <span style="font-size:13px;font-family:var(--font-mono);color:var(--accent)" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div id="ov-vrsar-warn" class="warn-box">
+    <strong>⚠️ URGENT THIS WEEK:</strong> You must e-sign the VRSAR (Separation Agreement) at <strong>aka.ms/VRP</strong> by <strong>June 22, 2026 at 11:59 PM PT</strong> — missing this deadline forfeits all VRP benefits and you remain an at-will employee with no separation.
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="subsection-title">Critical Deadlines</div>
+    <div class="timeline">
+      <div class="tl-item passed">
+        <div class="tl-date">June 8, 2026</div>
+        <div class="tl-title">✅ VRP Election Submitted</div>
+        <div class="tl-desc">You elected to participate in the VRP</div>
+      </div>
+      <div id="ov-tl-vrsar" class="tl-item urgent">
+        <div class="tl-date">June 22 · 11:59 PM PT — SIGN NOW</div>
+        <div class="tl-title" style="color:var(--red)">⚠️ Sign VRSAR at aka.ms/VRP</div>
+        <div class="tl-desc">Missing = forfeit all VRP benefits. 2-step: consent to e-sign, then sign the agreement.</div>
+      </div>
+      <div class="tl-item upcoming">
+        <div class="tl-date">June 29 · 11:59 PM PT</div>
+        <div class="tl-title">Last day to rescind (if you change your mind)</div>
+        <div class="tl-desc">After this, separation is final and irreversible</div>
+      </div>
+      <div class="tl-item upcoming">
+        <div class="tl-date">July 1, 2026</div>
+        <div class="tl-title">Last day of employment · Healthcare ends</div>
+        <div class="tl-desc">Return all equipment · submit Perks+ · update 401(k) elections · download TRP stock report</div>
+      </div>
+      <div id="ov-tl-cobra" class="tl-item future">
+        <div class="tl-date">~Aug 31, 2026</div>
+        <div class="tl-title">COBRA enrollment deadline (~60 days)</div>
+        <div class="tl-desc">Enroll at cobra.me.microsoft.com — missing forfeits ALL 5 years of healthcare coverage + 12-month subsidy</div>
+      </div>
+      <div class="tl-item future">
+        <div class="tl-date">Sep 2027</div>
+        <div class="tl-title">🏥 Kamaljit: Begin Medicare planning (6 mo ahead)</div>
+        <div class="tl-desc">Contact Via Benefits or SHIP before your 65th birthday (March 13, 2028)</div>
+      </div>
+      <div class="tl-item future">
+        <div class="tl-date">Dec 13, 2027 – Jun 13, 2028</div>
+        <div class="tl-title" style="color:var(--red)">⚠️ Kamaljit: Medicare enrollment window — VRP Healthcare ends Mar 13, 2028</div>
+        <div class="tl-desc">Enroll in Parts A, B, D and Medigap. VRP Extended Healthcare terminates at Medicare eligibility.</div>
+      </div>
+      <div class="tl-item future">
+        <div class="tl-date">Apr 2029</div>
+        <div class="tl-title">🏥 Davinder: Begin Medicare planning (6 mo ahead)</div>
+        <div class="tl-desc">Davinder turns 65 on October 24, 2029. Contact Via Benefits or SHIP ~6 months ahead.</div>
+      </div>
+      <div class="tl-item future">
+        <div class="tl-date">Jul 24 – Oct 24, 2029</div>
+        <div class="tl-title" style="color:var(--red)">⚠️ Davinder: Medicare enrollment window</div>
+        <div class="tl-desc">Enroll Davinder in Parts A, B, D and Medigap during her Initial Enrollment Period. Don't miss Medigap guaranteed-issue window.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ TODO BEFORE ══════ -->
+<div id="todo-before" class="tab-content">
+  <h2 class="section-title">Before July 1 <small>Last day of employment</small></h2>
+
+  <div class="card">
+    <div class="subsection-title">🔴 Urgent — Time-Critical</div>
+    <ul class="checklist">
+      <li class="done"><input type="checkbox" data-id="vrp_election_submitted" checked disabled style="opacity:0.6;cursor:not-allowed">
+        <div class="item-text"><strong>Elect to participate in VRP</strong><span>Submitted June 8, 2026 · VRP election window closed. This milestone is confirmed and cannot be undone.</span></div>
+        <span class="badge badge-green">✅ Done Jun 8</span></li>
+      <li><input type="checkbox" data-id="sign_vrsar_at_aka_ms_vrp" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Sign VRSAR at aka.ms/VRP</strong><span>2-step process: (1) consent to electronic signing, (2) review and e-sign the Voluntary Retirement Separation Agreement and Release. Missing the June 22 deadline forfeits all VRP benefits permanently.</span></div>
+        <span class="badge badge-red">June 22</span></li>
+      <li><input type="checkbox" data-id="verify_your_home_address_is_current_in_e" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Verify your home address is current in EmployeeCentral</strong><span>COBRA packet is mailed to your home the week of July 6. Update at aka.ms/ec → Your Employment Info → Personal Information → Contact Information.</span></div>
+        <span class="badge badge-red">ASAP</span></li>
+      <li><input type="checkbox" data-id="download_your_stock_report_from_total_re" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Download your stock report from Total Rewards Portal (TRP)</strong><span>TRP access ends permanently when employment ends. Download the full stock Excel report for your records NOW. After departure, contact Stock@Microsoft.com.</span></div>
+        <span class="badge badge-red">Before July 1</span></li>
+      <li><input type="checkbox" data-id="update_401_k_elections_at_fidelity_netbe" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Update 401(k) elections at Fidelity NetBenefits</strong><span>Elections apply to your final paycheck AND the September 2026 bonus. Microsoft will match 401(k) on the bonus up to $12,250. Confirm changes by July 1.</span></div>
+        <span class="badge badge-red">By July 1</span></li>
+      <li><input type="checkbox" data-id="submit_all_perks_reimbursements_to_forma" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Submit all Perks+ reimbursements to Forma</strong><span>Email msft-perks@joinforma.com with complete receipts BEFORE July 1. Requests after your last day are rejected with no exceptions.</span></div>
+        <span class="badge badge-red">By July 1</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">📋 Administrative</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="register_with_adp_for_pay_stub_access" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Register with ADP for pay stub access</strong><span>Go to my.adp.com → register with code MSFT-PAY (or "Find Me" with email, name, DOB, last 4 SSN). Do this before July 1 so you can access your final paycheck and September bonus stub after corpnet ends.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="note_your_personnel_number_42540" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Note your Personnel Number (42540)</strong><span>You'll need this for the Microsoft Alumni Network, future benefits contact, and any post-employment stock queries.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="submit_all_pending_expense_reports" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Submit all pending expense reports</strong><span>Use the MS Expense Tool. Pay any outstanding American Express corporate card balance. Do not leave balances — they can be deducted from your lump sum.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="verify_direct_deposit_bank_accounts" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Verify direct deposit bank accounts</strong><span>Your lump sum and final paycheck go to the same accounts currently set up for regular pay. Confirm they are correct and active.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="pre_register_with_microsoft_alumni_netwo" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Pre-register with Microsoft Alumni Network</strong><span>Get pre-verified before departure using your Employee ID. First year is free. Visit Microsoft Alumni Network site.</span></div>
+        <span class="badge badge-blue">Optional</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">💻 Technology & Data</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="back_up_all_personal_files_from_work_dev" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Back up all personal files from work devices</strong><span>Microsoft-issued devices can be remotely wiped at any time after your termination date. Remove ALL personal data before July 1.</span></div>
+        <span class="badge badge-red">Before July 1</span></li>
+      <li><input type="checkbox" data-id="permanently_delete_copies_of_microsoft_p" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Permanently delete copies of Microsoft property from personal devices</strong><span>All personal computers, phones, USB drives, cloud storage (personal OneDrive, Dropbox, etc.). Required by your Separation Agreement.</span></div>
+        <span class="badge badge-red">By July 1</span></li>
+      <li><input type="checkbox" data-id="remove_personal_device_from_intune_enrol" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Remove personal device from Intune enrollment</strong><span>Review "Remove a device from Intune Enrollment" on CSEweb. Follow steps for your device type (Android, Mac, or Windows).</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="transfer_or_delete_azure_subscriptions" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Transfer or delete Azure subscriptions</strong><span>Delete unnecessary Azure/cloud resources you manage. Transfer ownership of ongoing resources to your manager or a colleague before leaving.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="set_out_of_office_message_inside_your_or" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Set Out of Office message (Inside Your Organization only)</strong><span>Direct colleagues to the right contact for ongoing work after you leave.</span></div>
+        <span class="badge badge-blue">Before July 1</span></li>
+      <li><input type="checkbox" data-id="cancel_or_reassign_recurring_meetings_yo" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Cancel or reassign recurring meetings you own</strong><span>Cancel your recurring series and ask a colleague to recreate as needed.</span></div>
+        <span class="badge badge-blue">Before July 1</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">📦 Equipment Return</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="return_laptop_and_all_hardware_to_manage" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Return laptop and all hardware to manager</strong><span>Laptop, printers, accessories. In-person or coordinated shipping if remote. Provide CorpNet and BitLocker passwords to your manager.</span></div>
+        <span class="badge badge-red">July 1</span></li>
+      <li><input type="checkbox" data-id="return_all_physical_access_items" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Return all physical access items</strong><span>Cardkey/Badge · ORCA card (to receptionist/Security/HR) · carpool pass · PRIME card · American Express corporate card · Security FOB keys.</span></div>
+        <span class="badge badge-red">July 1</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">🤝 Work Transition</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="discuss_transition_plan_with_manager" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Discuss transition plan with manager</strong><span>Current project status, customer accounts, location of files/handover notes, communication plan to colleagues, customers, and partners.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="review_document_retention_policy_complia" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Review Document Retention Policy compliance</strong><span>Properly transition business documents per the global policy. If under a Litigation Hold, email LITDOC@Microsoft.com before leaving.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">🏥 Healthcare & Benefits Prep</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="download_notice_of_creditable_coverage" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Download Notice of Creditable Coverage</strong><span>From Microsoft benefits portal → Plan Documents &amp; Tax Information → Notice of Creditable Coverage. Needed for Medicare Part D enrollment decisions.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="if_age_65_download_personalized_cms_l564" onchange="handleCheck(this)">
+        <div class="item-text"><strong>If age 65+: Download personalized CMS-L564 form</strong><span>Available at aka.ms/benefitsenroll → your name dropdown → Personal Documents. Needed to enroll in Medicare Part B penalty-free. Available from May 25, 2026.</span></div>
+        <span class="badge badge-amber">If 65+</span></li>
+      <li><input type="checkbox" data-id="use_up_fsa_balance_or_plan_cobra_continu" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Use up FSA balance or plan COBRA continuation</strong><span>Submit claims for pre-separation expenses at NetBenefits.com. If you want to continue healthcare FSA via COBRA, note it is NOT subsidized by Microsoft.</span></div>
+        <span class="badge badge-amber">Before July 1</span></li>
+      <li><input type="checkbox" data-id="schedule_fidelity_financial_planning_con" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Schedule Fidelity financial planning consultation</strong><span>Call 1-888-810-MSFT (6738) or visit netbenefits.com. Discuss lump sum, DCP distributions, 401(k) strategy, retirement income planning.</span></div>
+        <span class="badge badge-blue">Recommended</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════ TODO AFTER ══════ -->
+<div id="todo-after" class="tab-content">
+  <h2 class="section-title">After Retiring <small>Post July 2, 2026</small></h2>
+
+  <div class="card">
+    <div class="subsection-title">🔴 Critical — First 60 Days</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="enroll_in_cobra_within_60_days_by_aug_31" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Enroll in COBRA — within ~60 days (~by Aug 31)</strong><span>COBRA packet arrives at home the week of July 6. Enroll online at cobra.me.microsoft.com (company key: <strong>microsoft</strong>) starting July 3, or via paper form. Your exact deadline is printed in the packet. Missing it = permanently lose 5 years of coverage + 12-month Microsoft subsidy.</span></div>
+        <span class="badge badge-red">~Aug 31</span></li>
+      <li><input type="checkbox" data-id="confirm_lump_sum_payment_received" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Confirm lump sum payment received</strong><span>Should arrive via direct deposit before end of July 2026. Contact benefits@microsoft.com if not received. Taxes withheld; no 401(k)/HSA/DCP deductions from this payment.</span></div>
+        <span class="badge badge-red">July 2026</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">📋 First Month</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="update_personal_email_with_bsc_cobra_adm" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Update personal email with BSC (COBRA administrator)</strong><span>Critical for receiving COBRA open enrollment notices each November and monthly premium invoices (starting Month 13, July 2027). Go to the Benefits Portal at USbenefits.microsoft.com.</span></div>
+        <span class="badge badge-amber">July</span></li>
+      <li><input type="checkbox" data-id="confirm_adp_access_for_pay_stubs" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Confirm ADP access for pay stubs</strong><span>my.adp.com with code MSFT-PAY. You'll need this for your final paycheck and September 2026 bonus pay stub after corpnet access ends.</span></div>
+        <span class="badge badge-amber">July</span></li>
+      <li><input type="checkbox" data-id="contact_metlife_within_60_days_to_contin" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Contact MetLife within 60 days to continue legal coverage</strong><span>Continue at $15.50/month. Contact MetLife directly — you must proactively sign up within 60 days of separation.</span></div>
+        <span class="badge badge-amber">Within 60 days</span></li>
+      <li><input type="checkbox" data-id="watch_for_prudential_life_insurance_conv" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Watch for Prudential life insurance conversion info</strong><span>Prudential sends conversion/portability information to your home address after separation is processed. Life insurance is NOT covered by COBRA — must convert separately.</span></div>
+        <span class="badge badge-amber">Watch mail</span></li>
+      <li><input type="checkbox" data-id="set_up_fidelity_e_trade_brokerage_access" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Set up Fidelity/E*Trade brokerage access for stock management</strong><span>Ensure your brokerage account is accessible without corpnet. Contact Stock@Microsoft.com for any stock-related queries post-employment.</span></div>
+        <span class="badge badge-amber">July</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">💰 Financial</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="review_dcp_distribution_timing" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Review DCP distribution timing</strong><span>Your DCP ($460,078 total) distributes as annual installments over 5 years starting at your separation date. Review at aka.ms/dcp while still accessible. First payment expected late 2026.</span></div>
+        <span class="badge badge-amber">July</span></li>
+      <li><input type="checkbox" data-id="verify_fy26_annual_bonus_in_september_20" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Verify FY26 annual bonus in September 2026</strong><span>Paid at your impact level in September 2026. Your 401(k) elections (if updated by July 1) apply. Microsoft will match contributions up to $12,250.</span></div>
+        <span class="badge badge-amber">Sept 2026</span></li>
+      <li><input type="checkbox" data-id="confirm_july_microsoft_hsa_contribution_" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Confirm July Microsoft HSA contribution (if enrolled in HSP)</strong><span>Microsoft's July employer HSA contribution arrives with the first July pay period. The HSA stays with Fidelity — it's yours to keep and use for qualified medical expenses.</span></div>
+        <span class="badge badge-green">July</span></li>
+      <li><input type="checkbox" data-id="decide_on_401_k_rollover_strategy" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Decide on 401(k) rollover strategy</strong><span>Your 401(k) remains at Fidelity. Options: leave it, roll to IRA, or roll to a new employer plan. No required action; call 1-888-810-MSFT to discuss with a Fidelity advisor.</span></div>
+        <span class="badge badge-blue">Within 60 days</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">📈 Stock Vesting (Ongoing)</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="first_post_retirement_vest_aug_31_2026_1" onchange="handleCheck(this)">
+        <div class="item-text"><strong>First post-retirement vest: Aug 31, 2026 — 145 shares (~$58K)</strong><span>FY21+FY22+FY23+FY24+FY25 all vest together on Aug 31. Confirm your Fidelity brokerage is set up to receive these shares.</span></div>
+        <span class="badge badge-green">Aug 31, 2026</span></li>
+      <li><input type="checkbox" data-id="monitor_quarterly_vest_schedule_through_" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Monitor quarterly vest schedule through 2029</strong><span>936 total shares vest across 13 dates (2026–2029). FY21–FY24 = full retirement vesting (continues on schedule). FY25 = last vest May 31, 2027 (12-month VRP window). See Stock Vesting tab for full schedule.</span></div>
+        <span class="badge badge-blue">Ongoing</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">🏥 Healthcare Monitoring</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="mark_calendar_cobra_premiums_begin_july_" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Mark calendar: COBRA premiums begin July 2027 (Month 13)</strong><span>Microsoft covers all premiums through June 30, 2027. Starting July 2027, you pay full COBRA rates. Health Savings Plan (Premera) Employee Only = $836/mo. Budget and set a calendar reminder now.</span></div>
+        <span class="badge badge-amber">June 2027</span></li>
+      <li><input type="checkbox" data-id="watch_for_cobra_open_enrollment_each_nov" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Watch for COBRA Open Enrollment each November</strong><span>COBRA rates update annually. Open Enrollment (typically first 2 weeks of November) is your window to change plans — same as an active employee.</span></div>
+        <span class="badge badge-blue">Nov 2026+</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">🏥 Your Medicare — Kamaljit turns 65 on March 13, 2028</div>
+    <div class="info-box" style="margin-top:0;margin-bottom:14px"><strong>Key fact:</strong> Your VRP Extended Healthcare (months 19–60) ends the moment you become <em>eligible</em> for Medicare — even if you don't enroll. That date is <strong>March 13, 2028</strong>. Plan carefully. Missing Medicare enrollment windows can result in lifetime financial penalties.</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="contact_medicare_counselor_6mo_before_ka" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Contact Medicare counselor ~6 months before turning 65 (by Sep 2027)</strong><span>Call Via Benefits (1-855-803-2540) or SHIP (1-877-839-2675) — both free. Discuss your Medicare enrollment strategy given you'll have COBRA/VRP Extended Healthcare coverage. Understand your Special Enrollment Period (SEP) timing and whether to enroll at 65 or delay.</span></div>
+        <span class="badge badge-amber">By Sep 2027</span></li>
+      <li><input type="checkbox" data-id="kamaljit_medicare_initial_enrollment" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Enroll in Medicare Parts A &amp; B — Initial Enrollment Period (IEP)</strong><span>Your IEP runs from Dec 13, 2027 to Jun 13, 2028 (3 months before + month of + 3 months after your 65th birthday, March 13, 2028). Enrolling before March 13 means coverage starts March 1; enrolling after may delay coverage by 1–3 months. <strong>Part A</strong> is usually premium-free (you paid Medicare taxes for 30+ years). <strong>Part B</strong> requires a monthly premium. Use the CMS-L564 form you downloaded before leaving Microsoft to avoid penalties if you had employer coverage recently.</span></div>
+        <span class="badge badge-red">By Mar 2028</span></li>
+      <li><input type="checkbox" data-id="kamaljit_vrp_healthcare_ends_at_medicare" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Understand: VRP Extended Healthcare ends March 13, 2028</strong><span>Once you are eligible for Medicare (your 65th birthday), your VRP Extended Healthcare coverage ends — regardless of whether you enroll in Medicare. COBRA for dependents (Davinder) may continue independently. Plan a seamless transition: enroll in Medicare to start March 1 or April 1, 2028 so there is no coverage gap.</span></div>
+        <span class="badge badge-red">Mar 2028</span></li>
+      <li><input type="checkbox" data-id="kamaljit_consider_medigap_or_advantage" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Evaluate Medigap or Medicare Advantage to supplement Original Medicare</strong><span><strong>Medigap</strong> (Medicare Supplement): covers deductibles, copays, coinsurance not covered by Parts A &amp; B. Best guaranteed-issue window is your Medigap Open Enrollment Period (6 months starting when you enroll in Part B). After this window, insurers can deny coverage based on health. <strong>Medicare Advantage (Part C)</strong>: private plan bundling A+B+usually D, may include dental/vision. Compare via Medicare.gov or Via Benefits.</span></div>
+        <span class="badge badge-amber">Early 2028</span></li>
+      <li><input type="checkbox" data-id="kamaljit_medicare_part_d_drug_coverage" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Enroll in Medicare Part D (prescription drugs)</strong><span>Enroll during your IEP to avoid a lifetime penalty. Your "Notice of Creditable Coverage" (downloaded before leaving Microsoft) confirms your employer coverage was creditable, meaning no penalty for coverage during that period. Compare plans at Medicare.gov/plan-compare.</span></div>
+        <span class="badge badge-amber">By Mar 2028</span></li>
+      <li><input type="checkbox" data-id="davinder_cobra_continues_after_kamaljit_medicare" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Davinder's COBRA/VRP coverage after your Medicare enrollment</strong><span>When you enroll in Medicare, your VRP Extended Healthcare ends — but <strong>Davinder can continue COBRA independently</strong>. Your enrolling in Medicare within the first 18 months of COBRA is treated as a secondary qualifying event for your spouse, potentially extending her COBRA up to 36 months from the date you first enrolled in Medicare. Contact BSC (cobra.me.microsoft.com) promptly after enrolling in Medicare to preserve Davinder's coverage.</span></div>
+        <span class="badge badge-red">Mar 2028</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">🏥 Davinder's Medicare — Davinder turns 65 on Oct 24, 2029</div>
+    <div class="info-box" style="margin-top:0;margin-bottom:14px"><strong>Key fact:</strong> Davinder's extended COBRA coverage (post your Medicare enrollment) ends when she becomes eligible for Medicare on <strong>October 24, 2029</strong>. Plan her transition well in advance.</div>
+    <ul class="checklist">
+      <li><input type="checkbox" data-id="contact_medicare_counselor_6mo_before_da" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Contact Medicare counselor for Davinder ~6 months before her 65th (by Apr 2029)</strong><span>Call Via Benefits (1-855-803-2540) or SHIP (1-877-839-2675) to plan Davinder's Medicare enrollment. Understand how her COBRA termination interacts with Medicare enrollment timing. Confirm she qualifies for premium-free Part A based on your work history (she likely does via spousal benefit).</span></div>
+        <span class="badge badge-amber">By Apr 2029</span></li>
+      <li><input type="checkbox" data-id="davinder_medicare_initial_enrollment" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Davinder enrolls in Medicare Parts A &amp; B</strong><span>Her IEP runs Jul 24, 2029 – Jan 24, 2030. Enroll before October 24 for coverage starting October 1. She can use a Special Enrollment Period (SEP) if she has qualifying employer coverage — but at this point she'll be on COBRA/independent coverage, so the IEP is the right window. Late enrollment in Part B = 10% lifetime penalty per year of delay.</span></div>
+        <span class="badge badge-red">By Oct 2029</span></li>
+      <li><input type="checkbox" data-id="davinder_medigap_and_part_d" onchange="handleCheck(this)">
+        <div class="item-text"><strong>Davinder: evaluate Medigap + enroll in Part D</strong><span>Davinder's Medigap guaranteed-issue window opens when she enrolls in Part B — don't miss it. Also enroll in Part D to avoid lifetime penalty. Use Medicare.gov/plan-compare to find the best drug plan.</span></div>
+        <span class="badge badge-amber">Oct–Nov 2029</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════ TIMELINE ══════ -->
+<div id="timeline" class="tab-content">
+  <h2 class="section-title">Complete VRP Timeline</h2>
+  <div class="card">
+    <div class="timeline">
+      <div class="tl-item passed"><div class="tl-date">May 7, 2026</div><div class="tl-title">VRP offer window opens</div><div class="tl-desc">Election period begins at aka.ms/VRP</div></div>
+      <div class="tl-item passed"><div class="tl-date">June 8, 2026 · 11:59 PM PT</div><div class="tl-title">✅ VRP Election submitted</div><div class="tl-desc">You elected to participate</div></div>
+      <div id="tl-vrsar" class="tl-item urgent"><div class="tl-date">June 22, 2026 · 11:59 PM PT — URGENT</div><div class="tl-title" style="color:var(--red)">⚠️ Sign VRSAR at aka.ms/VRP</div><div class="tl-desc">Missing = forfeit all VRP benefits permanently. 2 steps: consent + sign.</div></div>
+      <div class="tl-item upcoming"><div class="tl-date">June 29, 2026 · 11:59 PM PT</div><div class="tl-title">Rescission window closes</div><div class="tl-desc">Last chance to change your mind. After this, separation is final.</div></div>
+      <div class="tl-item upcoming"><div class="tl-date">July 1, 2026</div><div class="tl-title">Last day of employment · Healthcare ends</div><div class="tl-desc">Return all equipment. Active healthcare coverage ends. Job responsibilities end EOD.</div></div>
+      <div class="tl-item future"><div class="tl-date">July 2, 2026</div><div class="tl-title">Separation Date — RETIREMENT</div><div class="tl-desc">CorpNet access ends. COBRA coverage begins retroactively. Can still access aka.ms/VRP and USbenefits.microsoft.com.</div></div>
+      <div class="tl-item future"><div class="tl-date">Week of July 6, 2026</div><div class="tl-title">COBRA enrollment packet arrives at home</div><div class="tl-desc">Contains exact 60-day deadline. Can enroll online at cobra.me.microsoft.com from July 3 (company key: microsoft).</div></div>
+      <div class="tl-item future"><div class="tl-date">End of July 2026</div><div class="tl-title">Lump sum payment · 39 weeks base pay</div><div class="tl-desc">Via direct deposit. Taxes withheld. No 401(k)/HSA/DCP deductions.</div></div>
+      <div id="tl-cobra" class="tl-item future"><div class="tl-date">~Aug 31, 2026</div><div class="tl-title">COBRA enrollment deadline</div><div class="tl-desc">Check your packet for exact date. Missing = permanent loss of all 5 years coverage + subsidy.</div></div>
+      <div class="tl-item future"><div class="tl-date">Aug 31, 2026</div><div class="tl-title">📈 First post-retirement stock vest: 145 shares (~$58K)</div><div class="tl-desc">FY21+FY22+FY23+FY24+FY25 shares vest together.</div></div>
+      <div class="tl-item future"><div class="tl-date">September 2026</div><div class="tl-title">FY26 Annual Bonus paid</div><div class="tl-desc">At your impact level. 401(k) elections apply if updated by July 1. Microsoft matches up to $12,250.</div></div>
+      <div class="tl-item future"><div class="tl-date">Nov 30, 2026</div><div class="tl-title">📈 Stock vest: 118 shares (~$47K)</div><div class="tl-desc">FY22+FY23+FY24+FY25 shares.</div></div>
+      <div class="tl-item future"><div class="tl-date">June 30, 2027</div><div class="tl-title">Microsoft COBRA subsidy ends</div><div class="tl-desc">Starting July 2027 you pay full COBRA rates. HSP Premera Employee Only = $836/mo.</div></div>
+      <div class="tl-item future"><div class="tl-date">May 31, 2027</div><div class="tl-title">📈 Last FY25 vest (12-month VRP window)</div><div class="tl-desc">FY25 Annual SA final vest date — 12-month window from July 2, 2026 separation date.</div></div>
+      <div class="tl-item future"><div class="tl-date">Jan 2, 2028</div><div class="tl-title">COBRA → VRP Extended Healthcare</div><div class="tl-desc">18 months of COBRA exhausted. Coverage automatically continues under VRP Extended Healthcare (months 19–60). Same benefits, same COBRA rates.</div></div>
+      <div class="tl-item future"><div class="tl-date">Aug 31, 2029</div><div class="tl-title">📈 Final retirement vesting (FY24 award)</div><div class="tl-desc">Last vest under retirement provision for FY24 Annual SA — 26 shares.</div></div>
+      <div class="tl-item future"><div class="tl-date">Aug 31, 2029</div><div class="tl-title">📈 Final retirement vest — FY24 Annual SA (26 shares)</div><div class="tl-desc">Last scheduled vest under the retirement provision. All unvested stock awards fully distributed.</div></div>
+
+      <div class="tl-item future">
+        <div class="tl-date">September 2027 — ACTION NEEDED</div>
+        <div class="tl-title" style="color:var(--amber)">🏥 Kamaljit: Contact Medicare counselor 6 months before turning 65</div>
+        <div class="tl-desc">Call Via Benefits (1-855-803-2540) or SHIP (1-877-839-2675) — free guidance. Discuss IEP timing, whether to enroll at 65, Medigap guaranteed-issue window, and coordinating with your COBRA/VRP Extended Healthcare transition.</div>
+      </div>
+
+      <div class="tl-item future">
+        <div class="tl-date">Dec 13, 2027 — Mar 13, 2028 IEP window</div>
+        <div class="tl-title" style="color:var(--red)">⚠️ Kamaljit: Medicare Initial Enrollment Period (turns 65 March 13, 2028)</div>
+        <div class="tl-desc">Enroll in Medicare Parts A, B, and D during this window. Ideally before March 13 so coverage starts March 1. <strong>Your VRP Extended Healthcare terminates on your Medicare eligibility date (March 13, 2028)</strong> — even if you don't enroll. Enroll in Medigap during your 6-month guaranteed-issue window (starts when Part B begins). Missing these windows results in lifetime financial penalties.</div>
+      </div>
+
+      <div class="tl-item future">
+        <div class="tl-date">March 13, 2028</div>
+        <div class="tl-title" style="color:var(--red)">🏥 VRP Extended Healthcare ends for Kamaljit (Medicare eligible)</div>
+        <div class="tl-desc">Per plan rules, VRP Extended Healthcare terminates when you become eligible for Medicare regardless of enrollment. Davinder's COBRA may continue independently — Kamaljit's Medicare enrollment within first 18 months of COBRA is a secondary qualifying event, potentially allowing her 36 months of COBRA from that date.</div>
+      </div>
+
+      <div class="tl-item future">
+        <div class="tl-date">April 2029 — ACTION NEEDED</div>
+        <div class="tl-title" style="color:var(--amber)">🏥 Davinder: Contact Medicare counselor 6 months before turning 65</div>
+        <div class="tl-desc">Davinder turns 65 on October 24, 2029. Contact Via Benefits or SHIP ~6 months ahead to plan enrollment. Confirm she qualifies for premium-free Part A (based on Kamaljit's 30+ years of Medicare tax contributions via spousal benefit).</div>
+      </div>
+
+      <div class="tl-item future">
+        <div class="tl-date">Jul 24 – Oct 24, 2029 IEP window</div>
+        <div class="tl-title" style="color:var(--red)">⚠️ Davinder: Medicare Initial Enrollment Period (turns 65 Oct 24, 2029)</div>
+        <div class="tl-desc">Enroll Davinder in Medicare Parts A, B, and D. Enroll before Oct 24 for coverage starting Oct 1. Her independent COBRA ends when she becomes Medicare eligible. Enroll in Medigap during her 6-month guaranteed-issue window. Late Part B enrollment = 10% lifetime penalty per year of delay.</div>
+      </div>
+
+      <div class="tl-item future"><div class="tl-date">July 1, 2031</div><div class="tl-title">VRP Extended Healthcare maximum end date</div><div class="tl-desc">5-year coverage expires. This date is moot for Kamaljit (ends Mar 2028 at Medicare eligibility) and likely moot for Davinder too (ends Oct 2029). If Davinder's independent COBRA is still active past 2031, it also terminates here.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ BENEFITS ══════ -->
+<div id="benefits" class="tab-content">
+  <h2 class="section-title">Your VRP Benefits Summary</h2>
+
+  <div class="card">
+    <div class="subsection-title">Personalized Package — Kamaljit Bath (Employee ID: 42540)</div>
+    <div class="benefit-grid">
+      <div class="benefit-item"><div class="bi-label">Cash Lump Sum</div><div class="bi-value">39 weeks</div><div class="bi-sub">of base pay · direct deposit by end of July</div></div>
+      <div class="benefit-item"><div class="bi-label">Healthcare Coverage</div><div class="bi-value">5 years</div><div class="bi-sub">COBRA 18 mo + VRP Extended 42 mo · ends July 1, 2031</div></div>
+      <div class="benefit-item"><div class="bi-label">Continued Vesting</div><div class="bi-value">12 months</div><div class="bi-sub">All awards vest through July 2, 2027</div></div>
+      <div class="benefit-item"><div class="bi-label">Stock Plan Retirement</div><div class="bi-value">✓ Eligible</div><div class="bi-sub">FY21–FY24 annual awards vest on full schedule</div></div>
+    </div>
+    <div class="info-box"><strong>Lump Sum Estimate:</strong> Annual salary ÷ 52 × 39 = gross estimate. Example: $200K salary → ~$150K gross (before supplemental tax withholding of ~22–37%). No 401(k), HSA, or DCP deductions apply.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Healthcare — 2026 COBRA Monthly Rates</div>
+    <table>
+      <thead><tr><th>Plan</th><th class="num">Employee Only</th><th class="num">Emp + Spouse</th><th class="num">Emp + Children</th><th class="num">Family</th></tr></thead>
+      <tbody>
+        <tr><td>Health Savings Plan (Premera)</td><td class="num">$836.40</td><td class="num">$1,672.80</td><td class="num">$1,254.60</td><td class="num">$1,589.16</td></tr>
+        <tr><td>Hawaii Only Plan (Premera)</td><td class="num">$896.58</td><td class="num">$1,793.16</td><td class="num">$1,345.38</td><td class="num">$1,703.40</td></tr>
+        <tr><td>Surest PPO Plan</td><td class="num">$918.00</td><td class="num">$1,853.34</td><td class="num">$1,455.54</td><td class="num">$1,666.68</td></tr>
+        <tr><td>HMO – Kaiser Foundation (WA)</td><td class="num">$789.48</td><td class="num">$1,578.96</td><td class="num">$1,184.22</td><td class="num">$1,500.42</td></tr>
+        <tr><td>HMO – Kaiser Permanente (CA)</td><td class="num">$823.58</td><td class="num">$1,647.15</td><td class="num">$1,235.36</td><td class="num">$1,235.35</td></tr>
+        <tr><td>EyeMed Vision</td><td class="num">$20.40</td><td class="num">$40.80</td><td class="num">$30.60</td><td class="num">$38.76</td></tr>
+        <tr><td>Delta Dental</td><td class="num">$72.42</td><td class="num">$144.84</td><td class="num">$109.14</td><td class="num">$137.70</td></tr>
+        <tr><td>Wellbeing at Microsoft</td><td class="num">$45.52</td><td class="num">$45.52</td><td class="num">$45.52</td><td class="num">$45.52</td></tr>
+      </tbody>
+    </table>
+    <div class="note-box"><strong>Year 1 (through June 30, 2027):</strong> Microsoft pays 100% — you pay $0. Starting <strong>July 2027 (Month 13)</strong>, you pay the full rate above. Rates update each November at COBRA Open Enrollment. HSA funds can be used to pay COBRA/VRP Extended Healthcare premiums.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Other Benefits Post-Retirement</div>
+    <table>
+      <thead><tr><th>Benefit</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>FY26 Annual Bonus</td><td class="green-text">✅ Eligible · paid September 2026 · 401(k) matchable</td></tr>
+        <tr><td>HSA (if enrolled in HSP)</td><td class="green-text">✅ July Microsoft contribution + account stays with you at Fidelity</td></tr>
+        <tr><td>FSA (Health/Dependent Care)</td><td>Submit claims for pre-separation expenses. Healthcare FSA can continue via COBRA (not subsidized by Microsoft).</td></tr>
+        <tr><td>MetLife Legal</td><td>$15.50/month — contact within 60 days of separation</td></tr>
+        <tr><td>Life Insurance</td><td>Convert with Prudential (they mail info to your home after separation)</td></tr>
+        <tr><td>Perks+</td><td class="red-text">❌ Ended — must submit by July 1</td></tr>
+        <tr><td>Living Well Care Center (Redmond)</td><td class="green-text">✅ Accessible while enrolled in COBRA/VRP Extended Healthcare</td></tr>
+        <tr><td>Microsoft Alumni Network</td><td class="green-text">✅ Free first year · pre-register with Employee ID 42540</td></tr>
+        <tr><td>MSAA (if applicable)</td><td>Cash payout within 30 days of separation if unused</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ STOCK VESTING ══════ -->
+<div id="stock" class="tab-content">
+  <h2 class="section-title">Stock Vesting Schedule <small>Post-retirement vests from your TRP export</small></h2>
+
+  <div class="card">
+    <div class="subsection-title">Summary — Unvested Shares at Retirement</div>
+    <div class="benefit-grid">
+      <div class="benefit-item"><div class="bi-label">Total Vesting Shares</div><div class="bi-value">936</div><div class="bi-sub">across 13 vest dates · 2026–2029</div></div>
+      <div class="benefit-item"><div class="bi-label">Est. Total Value @ $401</div><div class="bi-value">~$375K</div><div class="bi-sub">gross before taxes · uses June 10 price</div></div>
+      <div class="benefit-item"><div class="bi-label">Retirement Vesting (FY21–24)</div><div class="bi-value">880 sh</div><div class="bi-sub">continue on full schedule · no forfeiture</div></div>
+      <div class="benefit-item"><div class="bi-label">VRP Window (FY25)</div><div class="bi-value">63 sh</div><div class="bi-sub">vest through May 31, 2027 only · then 162 forfeited</div></div>
+    </div>
+    <div class="info-box"><strong>MSFT price:</strong> ~$401 as of June 10, 2026. 52-week range: $356–$555. Analyst consensus target: ~$561 (52 Buy ratings). Values below are estimates using $401 — actual values depend on share price at each vest date.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Vest-by-Vest Schedule</div>
+    <div id="vest-chart"></div>
+    <div class="note-box" style="margin-top:16px"><strong>After July 2, 2027 (12-month window):</strong> FY25 Annual SA stops vesting. 162 remaining FY25 shares are forfeited (~$65K at $401 — not received). FY21–FY24 awards continue under retirement provision through August 31, 2029.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Detailed Vest Table</div>
+    <table>
+      <thead><tr><th>Vest Date</th><th class="num">Shares</th><th class="num">Est. Value @ $401</th><th>Awards Vesting</th><th>Type</th></tr></thead>
+      <tbody id="vest-table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">How Vesting Works Under VRP — Your Eligibility</div>
+    <table>
+      <thead><tr><th>Award</th><th>Granted</th><th>Unvested</th><th>Treatment</th></tr></thead>
+      <tbody>
+        <tr><td>FY21 Annual SA</td><td>Aug 2021</td><td class="num">56</td><td class="green-text">✅ Full Retirement Vesting (granted &gt;12 mo before separation)</td></tr>
+        <tr><td>FY22 Annual SA</td><td>Aug 2022</td><td class="num">290</td><td class="green-text">✅ Full Retirement Vesting</td></tr>
+        <tr><td>FY23 Annual SA</td><td>Aug 2023</td><td class="num">321</td><td class="green-text">✅ Full Retirement Vesting</td></tr>
+        <tr><td>FY24 Annual SA</td><td>Aug 2024</td><td class="num">353</td><td class="green-text">✅ Full Retirement Vesting</td></tr>
+        <tr><td>FY25 Annual SA</td><td>Aug 2025</td><td class="num">225</td><td class="amber-text">⚡ 12-month VRP window only (granted &lt;12 mo before separation)</td></tr>
+        <tr><td>FY26 Annual SA</td><td>Aug 2026</td><td class="num">—</td><td class="red-text">❌ Not received (grant date Aug 31, 2026 is after separation)</td></tr>
+      </tbody>
+    </table>
+    <div class="note-box"><strong>Why FY25 doesn't qualify for retirement vesting:</strong> Annual awards must be granted at least 12 months before your termination date to qualify for retirement vesting. The FY25 award was granted August 31, 2025 — less than 12 months before your July 2, 2026 separation. It only gets the 12-month VRP continued vesting window.<br><br><strong>Stock Plan Retirement qualification confirmed:</strong> Hired before Aug 1, 2023 ✅ · Award provides retirement vesting ✅ · Age/service criteria met (confirmed in Personalized Statement) ✅</div>
+  </div>
+</div>
+
+<!-- ══════ DCP ══════ -->
+<div id="dcp" class="tab-content">
+  <h2 class="section-title">Deferred Compensation Plan (DCP)</h2>
+
+  <div class="card">
+    <div class="subsection-title">Your DCP Balances (from elections file)</div>
+    <table>
+      <thead><tr><th>Source Group</th><th class="num">Market Value</th><th>Contribution Year</th><th>Distribution</th><th>Duration</th></tr></thead>
+      <tbody>
+        <tr><td>Base Salary (Post 2013)</td><td class="num green-text">$202,944.33</td><td>2015</td><td>Annual installments</td><td>5 years</td></tr>
+        <tr><td>Review Bonus (Post 2013)</td><td class="num green-text">$257,133.24</td><td>2015</td><td>Annual installments</td><td>5 years</td></tr>
+        <tr style="background:var(--surface2)"><td><strong>Total DCP Balance</strong></td><td class="num" style="font-weight:700;color:var(--amber);font-size:15px">$460,077.57</td><td colspan="3" style="color:var(--muted)">Payment begins at Termination (July 2, 2026)</td></tr>
+      </tbody>
+    </table>
+    <div class="note-box"><strong>Annual installment estimate:</strong> $460,078 ÷ 5 years = approximately <strong>$92,016/year</strong>, starting from your separation date. First annual payment expected sometime after July 2, 2026. Your VRP lump sum payment does NOT have any DCP deferral applied to it.</div>
+    <div class="info-box"><strong>Tax note:</strong> DCP distributions are taxed as ordinary income in the year received. With $92K/year over 5 years (2026–2031), plus lump sum income and stock vest income in the same years, tax planning is important. Consult your tax/financial advisor. For DCP details visit aka.ms/dcp.</div>
+    <div class="warn-box"><strong>Action needed:</strong> Review your DCP distribution elections at aka.ms/dcp while you still have corpnet access (before July 2). Confirm the 5-year annual installment schedule is what you want — distribution elections are generally irrevocable.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Combined Post-Retirement Income Estimate (Rough)</div>
+    <table>
+      <thead><tr><th>Income Source</th><th>When</th><th class="num">Est. Amount</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>VRP Lump Sum</td><td>End of July 2026</td><td class="num green-text">39 × weekly base</td><td>Taxes withheld. No 401k/HSA/DCP deductions.</td></tr>
+        <tr><td>FY26 Annual Bonus</td><td>September 2026</td><td class="num amber-text">Impact-based</td><td>401(k) matchable. Taxes withheld.</td></tr>
+        <tr><td>DCP Installment Year 1</td><td>2026 (after Jul 2)</td><td class="num">~$92,016</td><td>Ordinary income. Taxes due.</td></tr>
+        <tr><td>Stock Vests 2026</td><td>Aug + Nov 2026</td><td class="num">~$105,463</td><td>263 shares @ $401. Ordinary income at vest.</td></tr>
+        <tr><td>Stock Vests 2027</td><td>4 dates in 2027</td><td class="num">~$159,999</td><td>399 shares @ $401. Retirement + VRP window.</td></tr>
+        <tr><td>DCP Installments Yr 2–5</td><td>2027–2031</td><td class="num">~$92K/yr</td><td>$368K total. Ordinary income each year.</td></tr>
+        <tr><td>Stock Vests 2028–2029</td><td>5 dates</td><td class="num">~$109,874</td><td>274 shares @ $401. FY23+FY24 retirement vesting.</td></tr>
+      </tbody>
+    </table>
+    <div class="note-box"><strong>Note:</strong> All stock values use $401/share (June 10, 2026 price). Actual values depend on MSFT price at each vest date. Analyst 12-month consensus target is ~$561/share — if reached, vest values would be ~40% higher. This is NOT financial advice; consult your advisor.</div>
+  </div>
+
+  <div class="card">
+    <div class="subsection-title">Key Financial Contacts</div>
+    <table>
+      <thead><tr><th>Resource</th><th>Contact</th><th>For</th></tr></thead>
+      <tbody>
+        <tr><td>Fidelity (401k, HSA, DCP)</td><td>1-888-810-MSFT (6738) · netbenefits.com</td><td>401(k), HSA, DCP, financial planning</td></tr>
+        <tr><td>Microsoft Stock Team</td><td>Stock@Microsoft.com</td><td>Stock vesting info post-separation</td></tr>
+        <tr><td>Microsoft Benefits</td><td>benefits@microsoft.com</td><td>VRP questions, COBRA, general benefits</td></tr>
+        <tr><td>BSC (COBRA admin)</td><td>cobra.me.microsoft.com</td><td>COBRA enrollment and management</td></tr>
+        <tr><td>Via Benefits (Medicare)</td><td>1-855-803-2540 · 1-866-322-2824</td><td>Medicare &amp; post-employment healthcare</td></tr>
+        <tr><td>SHIP (free Medicare counseling)</td><td>1-877-839-2675</td><td>Free one-on-one Medicare guidance</td></tr>
+        <tr><td>ADP (pay stubs)</td><td>my.adp.com · code: MSFT-PAY</td><td>Access pay stubs after employment</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════ Q&A ══════ -->
+<div id="qa" class="tab-content">
+  <h2 class="section-title">Knowledge Base — Quick Answers</h2>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="subsection-title">Lump Sum & Pay</div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>When do I get my lump sum?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>Before end of July 2026.</strong> Via direct deposit to your regular pay accounts within 30 days of termination. The plan document specifies no later than March 15, 2027 as the absolute deadline, but in practice it will be by end of July. <div class="highlight">Verify your direct deposit accounts are current before July 1.</div></div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Will my lump sum have 401(k) or HSA deductions?</span><span class="arrow">▶</span></div><div class="qa-a">No. The VRP lump sum is <strong>not considered regular pay</strong>. Voluntary deductions like 401(k) and HSA are NOT taken. Applicable taxes ARE withheld (at supplemental rate). Any debts owed to Microsoft may be deducted.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Am I eligible for the FY26 annual bonus?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>Yes.</strong> VRP participants are employed through end of FY26 and receive the annual bonus based on impact level. FY26 bonuses are paid in <strong>September 2026</strong>. <div class="highlight">Update your 401(k) elections by July 1 to have contributions taken from the bonus. Microsoft will match up to $12,250.</div></div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>How do I access pay stubs after corpnet ends?</span><span class="arrow">▶</span></div><div class="qa-a">Register at <strong>my.adp.com</strong> using code <strong>MSFT-PAY</strong> or the "Find Me" option (email, name, DOB, last 4 SSN). Do this before your last day to ensure access.</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="subsection-title">Healthcare & COBRA</div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>When does healthcare coverage end?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>July 1, 2026</strong> — your last day. If you enroll in COBRA within the 60-day window, coverage continues retroactively from July 2 with no gap in coverage.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What happens if I miss COBRA enrollment?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>You permanently lose</strong> eligibility for COBRA, all 5 years of VRP Extended Healthcare, AND the 12-month Microsoft subsidy. Non-recoverable. <div class="highlight">⚠️ Packet arrives week of July 6. Enroll at cobra.me.microsoft.com (key: "microsoft") starting July 3. Your exact deadline is in the packet.</div></div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>How much does COBRA cost and who pays?</span><span class="arrow">▶</span></div><div class="qa-a">Microsoft pays 100% for <strong>Months 1–12</strong> (through June 30, 2027). Starting <strong>Month 13 (July 2027)</strong>, you pay full COBRA rates. Health Savings Plan (Premera) Employee Only = $836.40/mo; with spouse = $1,672.80/mo. Rates update each November. You can use HSA funds to pay COBRA premiums.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What is VRP Extended Healthcare vs COBRA?</span><span class="arrow">▶</span></div><div class="qa-a">COBRA covers <strong>months 1–18</strong> (July 2, 2026 → Jan 1, 2028). VRP Extended Healthcare automatically takes over for <strong>months 19–60</strong> (Jan 2, 2028 → July 1, 2031) — same benefits, same COBRA rates. No separate enrollment; it's automatic if you're on COBRA. Total: up to 5 years continuous.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Can I use HSA funds to pay COBRA premiums?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>Yes.</strong> COBRA and VRP Extended Healthcare premiums are qualified medical expenses eligible for HSA payment or reimbursement. Consult your tax advisor for details on how to properly record this.</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="subsection-title">Stock Vesting</div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What happens to my unvested stock?</span><span class="arrow">▶</span></div><div class="qa-a">Two tracks: (1) <strong>FY21–FY24 Annual Awards</strong> — you qualify for Stock Plan Retirement, so these continue vesting on their full original schedule indefinitely. (2) <strong>FY25 Annual Award</strong> — only eligible for the 12-month VRP window (through July 2, 2027) because it was granted less than 12 months before separation. 63 FY25 shares vest; 162 are forfeited after July 2, 2027. Total unvested vesting: 936 shares (~$375K at $401).</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>When is the first post-retirement vest?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>August 31, 2026</strong> — 145 shares from FY21+FY22+FY23+FY24+FY25 awards, estimated at ~$58K at $401/share. Make sure your Fidelity brokerage is set up to receive shares before then.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Will I receive the FY26 Annual Stock Award?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>No.</strong> The FY26 Annual Stock Award grant date is August 31, 2026. You must be actively employed on the grant date. Your employment ends July 2, 2026 — before the grant date.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>How do I access stock info after I leave?</span><span class="arrow">▶</span></div><div class="qa-a">Email <strong>Stock@Microsoft.com</strong> — they handle stock-related queries after employment ends. Also ensure your brokerage (Fidelity) account is set up and accessible without corpnet before July 1. <div class="highlight">Download your TRP stock Excel report BEFORE July 1 — TRP access ends with employment.</div></div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="subsection-title">Rules & Restrictions</div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Can I come back to work at Microsoft?</span><span class="arrow">▶</span></div><div class="qa-a">Not for <strong>2 years</strong> as a full-time employee. Not for <strong>6 months</strong> as a contractor. You don't need to repay the lump sum if you return after 2 years. However, returning as an employee and enrolling in Microsoft healthcare would end your COBRA/VRP Extended Healthcare coverage.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Am I eligible for unemployment benefits?</span><span class="arrow">▶</span></div><div class="qa-a">Likely not. As part of VRP, you resign voluntarily. <strong>Voluntary retirements are generally not eligible for unemployment benefits</strong>, though it ultimately depends on your state's laws. Washington State may have specific rules — consult an employment attorney or the WA Employment Security Department if this matters to you.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Can I still rescind my VRP election?</span><span class="arrow">▶</span></div><div class="qa-a">Yes — if you signed the VRSAR, you can rescind it during the <strong>June 23–29, 2026</strong> window at aka.ms/VRP. After June 29, the separation is final. Rescinding means no VRP benefits and you remain an at-will employee.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What post-employment obligations remain?</span><span class="arrow">▶</span></div><div class="qa-a">Your Non-Disclosure Agreement and Employee Agreement remain fully binding. You must return all Microsoft property by July 1 and permanently delete all Microsoft property from personal devices. If you have a US security clearance, contact myclearance@microsoft.com to be offboarded properly.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What if I resign before July 2?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>You lose all VRP benefits.</strong> The separation date is fixed at July 2, 2026 and cannot be moved. You are expected to work through July 1. You can take discretionary time off with manager approval, but you must remain employed through separation.</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="subsection-title">Medicare — Kamaljit &amp; Davinder</div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>When does Kamaljit's VRP Extended Healthcare end?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>March 13, 2028</strong> — your 65th birthday. Per the plan, VRP Extended Healthcare ends when you become <em>eligible</em> for Medicare (typically age 65), regardless of whether you actually enroll. <div class="highlight">Enroll in Medicare before March 13, 2028 so coverage starts March 1 with no gap. Your Initial Enrollment Period runs Dec 13, 2027 – Jun 13, 2028.</div></div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What happens to Davinder's coverage when Kamaljit enrolls in Medicare?</span><span class="arrow">▶</span></div><div class="qa-a">Kamaljit's VRP Extended Healthcare ends, but <strong>Davinder can continue COBRA independently</strong>. Under a special COBRA rule, Kamaljit's Medicare enrollment within the first 18 months of COBRA is a <em>secondary qualifying event</em> for Davinder — potentially extending her independent COBRA up to <strong>36 months from Kamaljit's Medicare eligibility date</strong> (March 13, 2028 → March 13, 2031). Contact BSC immediately after enrollment to protect this right. Davinder pays full COBRA premiums independently.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What is the Medigap guaranteed-issue window and why does it matter?</span><span class="arrow">▶</span></div><div class="qa-a">The <strong>Medigap Open Enrollment Period</strong> is a 6-month window starting when you enroll in Medicare Part B. During this window, insurers <em>cannot</em> deny coverage or charge more due to pre-existing conditions. <strong>After this window, insurers can reject you.</strong> For Kamaljit: opens ~March 1, 2028. For Davinder: opens ~October 1, 2029. Do not miss these windows — guaranteed issue only happens once.</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>Is Davinder eligible for premium-free Medicare Part A?</span><span class="arrow">▶</span></div><div class="qa-a">Very likely <strong>yes</strong>, via spousal benefit. Part A is premium-free if you or your spouse paid Medicare taxes for at least 10 years (40 quarters). With Kamaljit's 30+ years at Microsoft, Davinder almost certainly qualifies. Confirm with the Social Security Administration (SSA.gov or 1-800-772-1213).</div></div>
+    <div class="qa-item"><div class="qa-q" onclick="toggleQA(this)"><span>What Medicare resources can help us plan?</span><span class="arrow">▶</span></div><div class="qa-a"><strong>Free resources:</strong><br>• <strong>Via Benefits</strong> — 1-855-803-2540. Individualized Medicare guidance, Medigap, plan comparison.<br>• <strong>SHIP</strong> — 1-877-839-2675. Free one-on-one certified Medicare counselor.<br>• <strong>Medicare.gov</strong> — official site, plan finder, enrollment tools.<br>• <strong>Social Security Administration</strong> — SSA.gov or 1-800-772-1213 for Part A/B enrollment.<br><div class="highlight">Start planning 6 months before each 65th birthday: Sep 2027 for Kamaljit, Apr 2029 for Davinder.</div></div></div>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+// ── Vest data from TRP export ──
+const MSFT_PRICE = 401;
+const vestData = [
+  {date:'2026-08-31',display:'Aug 31, 2026',shares:145,value:58145,awards:'FY21+FY22+FY23+FY24+FY25',type:'mixed'},
+  {date:'2026-11-30',display:'Nov 30, 2026',shares:118,value:47318,awards:'FY22+FY23+FY24+FY25',type:'mixed'},
+  {date:'2027-02-28',display:'Feb 28, 2027',shares:118,value:47318,awards:'FY22+FY23+FY24+FY25',type:'mixed'},
+  {date:'2027-05-31',display:'May 31, 2027',shares:118,value:47318,awards:'FY22+FY23+FY24+FY25 ← last FY25 vest',type:'mixed'},
+  {date:'2027-08-31',display:'Aug 31, 2027',shares:106,value:42506,awards:'FY22+FY23+FY24',type:'retirement'},
+  {date:'2027-11-30',display:'Nov 30, 2027',shares:57,value:22857,awards:'FY23+FY24',type:'retirement'},
+  {date:'2028-02-29',display:'Feb 29, 2028',shares:57,value:22857,awards:'FY23+FY24',type:'retirement'},
+  {date:'2028-05-31',display:'May 31, 2028',shares:58,value:23258,awards:'FY23+FY24',type:'retirement'},
+  {date:'2028-08-31',display:'Aug 31, 2028',shares:58,value:23258,awards:'FY23+FY24',type:'retirement'},
+  {date:'2028-11-30',display:'Nov 30, 2028',shares:25,value:10025,awards:'FY24',type:'retirement'},
+  {date:'2029-02-28',display:'Feb 28, 2029',shares:25,value:10025,awards:'FY24',type:'retirement'},
+  {date:'2029-05-31',display:'May 31, 2029',shares:25,value:10025,awards:'FY24',type:'retirement'},
+  {date:'2029-08-31',display:'Aug 31, 2029',shares:26,value:10426,awards:'FY24',type:'retirement'}
+];
+const maxValue = Math.max(...vestData.map(v=>v.value));
+
+function buildVestChart() {
+  const chart = document.getElementById('vest-chart');
+  const tbody = document.getElementById('vest-table-body');
+  let curYear = '';
+  let chartHTML = '';
+  let tableHTML = '';
+
+  vestData.forEach(v => {
+    const yr = v.date.split('-')[0];
+    if (yr !== curYear) {
+      curYear = yr;
+      chartHTML += `<div class="vest-year-header">${yr}</div>`;
+    }
+    const pct = Math.max(5, (v.value / maxValue) * 100);
+    const fillClass = v.type === 'retirement' ? 'retirement' : 'vrp-window';
+    const typeLabel = v.type === 'retirement' ? 'Retirement' : 'VRP+Ret';
+    chartHTML += `
+      <div class="vest-bar-row">
+        <div class="vest-bar-date">${v.display.replace(/,.*/, '')}</div>
+        <div class="vest-bar-track">
+          <div class="vest-bar-fill ${fillClass}" style="width:${pct}%">${v.awards}</div>
+        </div>
+        <div class="vest-bar-shares">${v.shares} sh</div>
+        <div class="vest-bar-value">$${(v.value/1000).toFixed(0)}K</div>
+      </div>`;
+
+    const typeColor = v.type === 'retirement' ? 'var(--green)' : 'var(--accent)';
+    tableHTML += `<tr>
+      <td>${v.display}</td>
+      <td class="num">${v.shares}</td>
+      <td class="num">$${v.value.toLocaleString()}</td>
+      <td style="font-size:12px;color:var(--muted)">${v.awards}</td>
+      <td style="font-size:12px;color:${typeColor}">${v.type === 'retirement' ? '✅ Retirement' : '⚡ VRP Window'}</td>
+    </tr>`;
+  });
+
+  // Add forfeited row
+  tableHTML += `<tr style="background:rgba(224,86,86,.05)">
+    <td style="color:var(--red)">After Jul 2, 2027 (forfeited)</td>
+    <td class="num red-text">162</td>
+    <td class="num red-text">~$65,0​00</td>
+    <td style="font-size:12px;color:var(--muted)">FY25 Annual SA — remaining unvested</td>
+    <td style="font-size:12px;color:var(--red)">❌ Forfeited</td>
+  </tr>`;
+
+  chart.innerHTML = chartHTML;
+  tbody.innerHTML = tableHTML;
+}
+
+// ── Tab switching ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else event.target.classList.add('active');
+}
+
+// ── QA accordion ──
+function toggleQA(el) {
+  const answer = el.nextElementSibling;
+  const isOpen = answer.classList.contains('visible');
+  document.querySelectorAll('.qa-a').forEach(a => a.classList.remove('visible'));
+  document.querySelectorAll('.qa-q').forEach(q => q.classList.remove('open'));
+  if (!isOpen) { answer.classList.add('visible'); el.classList.add('open'); }
+}
+
+// ── File System Access API persistence ──
+// Primary: vrp_todo_state.json in your OneDrive folder (syncs across laptops)
+// Fallback: localStorage (used until file is configured)
+// One-time setup per laptop: click the pill → pick/open vrp_todo_state.json in OneDrive
+
+const FH_DB = 'vrp_fh_v1'; // IndexedDB stores only the file *handle*, not the data
+let _fhDB = null, fileHandle = null;
+
+function openFHDB() {
+  if (_fhDB) return Promise.resolve(_fhDB);
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(FH_DB, 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('fh');
+    r.onsuccess = e => { _fhDB = e.target.result; res(_fhDB); };
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbGetHandle() {
+  try {
+    const db = await openFHDB();
+    return new Promise(res => {
+      const r = db.transaction('fh','readonly').objectStore('fh').get('main');
+      r.onsuccess = () => res(r.result || null);
+      r.onerror = () => res(null);
+    });
+  } catch { return null; }
+}
+async function idbPutHandle(h) {
+  try {
+    const db = await openFHDB();
+    await new Promise((res,rej) => {
+      const tx = db.transaction('fh','readwrite');
+      tx.objectStore('fh').put(h,'main');
+      tx.oncomplete = res; tx.onerror = ()=>rej(tx.error);
+    });
+  } catch {}
+}
+
+async function fsRead() {
+  if (!fileHandle) return null;
+  try { const f = await fileHandle.getFile(); if (!f.size) return null; return JSON.parse(await f.text()); }
+  catch { return null; }
+}
+async function fsWrite() {
+  if (!fileHandle) return;
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify(getStates(), null, 2));
+    await w.close();
+    setSaveUI('saved');
+    setTimeout(() => setSaveUI('ready'), 2000);
+  } catch(e) { console.warn('fsWrite:', e); }
+}
+
+function setSaveUI(status) {
+  const el = document.getElementById('save-status');
+  const pill = document.getElementById('save-pill');
+  const name = fileHandle ? fileHandle.name : '';
+  const cfg = {
+    none:   { t: '☁️ Click to set up OneDrive sync', c: 'var(--amber)', fn: pickSaveFile, border: 'rgba(245,166,35,.5)' },
+    prompt: { t: '🔓 Click to resume OneDrive sync',  c: 'var(--amber)', fn: resumePermission, border: 'rgba(245,166,35,.5)' },
+    ready:  { t: `☁️ ${name || 'OneDrive synced'}`,   c: 'var(--muted)', fn: pickSaveFile, border: '' },
+    saved:  { t: `✅ Saved → ${name || 'file'}`,       c: 'var(--green)', fn: null, border: '' },
+    noapi:  { t: '💾 localStorage only',               c: 'var(--small)', fn: null, border: '' },
+  }[status] || { t: '☁️ Click to set up OneDrive sync', c: 'var(--amber)', fn: pickSaveFile, border: 'rgba(245,166,35,.5)' };
+  if (el) { el.textContent = cfg.t; el.style.color = cfg.c; }
+  if (pill) { pill.style.cursor = cfg.fn ? 'pointer' : 'default'; pill.style.borderColor = cfg.border; pill.onclick = cfg.fn || null; }
+}
+
+async function pickSaveFile() {
+  if (!window.showSaveFilePicker) { setSaveUI('noapi'); return; }
+  try {
+    const h = await window.showSaveFilePicker({
+      suggestedName: 'vrp_todo_state.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      startIn: 'documents'
+    });
+    fileHandle = h;
+    await idbPutHandle(h);
+    // Read first — if existing data found (second-laptop setup), load it; otherwise write current state
+    const existing = await fsRead();
+    if (existing && Object.keys(existing).length) { applyStates(existing); updateProgress(); }
+    else { await fsWrite(); }
+    setSaveUI('ready');
+  } catch(e) { if (e.name !== 'AbortError') console.warn(e); }
+}
+
+async function resumePermission() {
+  const h = await idbGetHandle();
+  if (!h) return pickSaveFile();
+  try {
+    const p = await h.requestPermission({ mode: 'readwrite' });
+    if (p === 'granted') {
+      fileHandle = h;
+      const data = await fsRead();
+      if (data && Object.keys(data).length) { applyStates(data); updateProgress(); }
+      setSaveUI('ready');
+    }
+  } catch(e) { console.warn(e); }
+}
+
+// ── State helpers ──
+function getStates() {
+  const s = {};
+  document.querySelectorAll('input[type=checkbox][data-id]').forEach(cb => { s[cb.dataset.id] = cb.checked; });
+  return s;
+}
+function applyStates(s) {
+  document.querySelectorAll('input[type=checkbox][data-id]').forEach(cb => {
+    if (cb.disabled) return; // e.g. vrp_election_submitted — always stays checked
+    if (s[cb.dataset.id] !== undefined) {
+      cb.checked = !!s[cb.dataset.id];
+      cb.closest('li').classList.toggle('done', cb.checked);
+    }
+  });
+  syncDerivedUI();
+}
+
+// ── Sync Overview + Timeline views from checkbox state ──
+function syncDerivedUI() {
+  const s = getStates();
+
+  // Helper: update a timeline item element — both done AND pending text must be supplied
+  function setTL(id, done, d, p) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const state = done ? d : p;
+    el.className = done ? 'tl-item passed' : p.cls;
+    el.querySelector('.tl-date').textContent = state.date;
+    const t = el.querySelector('.tl-title');
+    t.innerHTML = state.title;
+    t.style.color = state.titleColor || '';
+    el.querySelector('.tl-desc').textContent = state.desc;
+  }
+
+  // ── VRSAR ──
+  const vrsarDone = !!s['sign_vrsar_at_aka_ms_vrp'];
+
+  // Overview warning banner
+  const warn = document.getElementById('ov-vrsar-warn');
+  if (warn) {
+    if (vrsarDone) {
+      warn.className = 'note-box';
+      warn.style.cssText = 'background:rgba(46,204,138,.07);border-color:rgba(46,204,138,.25);margin-top:16px';
+      warn.innerHTML = '<strong style="color:var(--green)">✅ VRSAR Signed</strong> — Your Voluntary Retirement Separation Agreement has been e-signed. VRP benefits are confirmed.';
+    } else {
+      warn.className = 'warn-box';
+      warn.style.cssText = '';
+      warn.innerHTML = '<strong>⚠️ URGENT THIS WEEK:</strong> You must e-sign the VRSAR (Separation Agreement) at <strong>aka.ms/VRP</strong> by <strong>June 22, 2026 at 11:59 PM PT</strong> — missing this deadline forfeits all VRP benefits and you remain an at-will employee with no separation.';
+    }
+  }
+
+  setTL('ov-tl-vrsar', vrsarDone,
+    { date: 'June 22, 2026 · ✅ Signed', title: '✅ VRSAR Signed — VRP Benefits Confirmed', titleColor: '', desc: 'Separation Agreement e-signed. VRP participation confirmed.' },
+    { cls: 'tl-item urgent', date: 'June 22 · 11:59 PM PT — SIGN NOW', title: '⚠️ Sign VRSAR at aka.ms/VRP', titleColor: 'var(--red)', desc: 'Missing = forfeit all VRP benefits. 2-step: consent to e-sign, then sign the agreement.' });
+
+  setTL('tl-vrsar', vrsarDone,
+    { date: 'June 22, 2026 · ✅ Signed', title: '✅ VRSAR Signed — VRP Benefits Confirmed', titleColor: '', desc: 'Separation Agreement e-signed. VRP participation confirmed.' },
+    { cls: 'tl-item urgent', date: 'June 22, 2026 · 11:59 PM PT — URGENT', title: '⚠️ Sign VRSAR at aka.ms/VRP', titleColor: 'var(--red)', desc: 'Missing = forfeit all VRP benefits permanently. 2 steps: consent + sign.' });
+
+  // ── COBRA ──
+  const cobraDone = !!s['enroll_in_cobra_within_60_days_by_aug_31'];
+
+  setTL('ov-tl-cobra', cobraDone,
+    { date: '~Aug 31, 2026 · ✅ Enrolled', title: '✅ COBRA Enrolled', titleColor: '', desc: 'Enrolled in COBRA — healthcare coverage active. 12-month Microsoft subsidy secured.' },
+    { cls: 'tl-item future', date: '~Aug 31, 2026', title: 'COBRA enrollment deadline (~60 days)', titleColor: '', desc: 'Enroll at cobra.me.microsoft.com — missing forfeits ALL 5 years of healthcare coverage + 12-month subsidy' });
+
+  setTL('tl-cobra', cobraDone,
+    { date: '~Aug 31, 2026 · ✅ Enrolled', title: '✅ COBRA Enrolled', titleColor: '', desc: 'Enrolled in COBRA — healthcare coverage active. 12-month Microsoft subsidy secured.' },
+    { cls: 'tl-item future', date: '~Aug 31, 2026', title: 'COBRA enrollment deadline', titleColor: '', desc: 'Check your packet for exact date. Missing = permanent loss of all 5 years coverage + subsidy.' });
+}
+
+// ── Export / Import ──
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(getStates(), null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'vrp_todo_state.json' });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importJSON(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const s = JSON.parse(ev.target.result);
+      applyStates(s);
+      await saveState();
+      updateProgress();
+    } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── Checkbox persistence ──
+function handleCheck(cb) {
+  const id = cb.dataset.id;
+  const checked = cb.checked;
+  document.querySelectorAll(`input[data-id="${id}"]`).forEach(box => {
+    box.checked = checked;
+    box.closest('li').classList.toggle('done', checked);
+  });
+  syncDerivedUI();
+  saveState();
+  updateProgress();
+}
+function saveState() {
+  const states = getStates();
+  try { localStorage.setItem('vrp_2026_v2', JSON.stringify(states)); } catch {}
+  fsWrite(); // async, fire-and-forget; setSaveUI handled inside fsWrite
+}
+async function loadState() {
+  if (fileHandle) {
+    const data = await fsRead();
+    if (data && Object.keys(data).length) { applyStates(data); return; }
+  }
+  // Fallback: localStorage
+  try {
+    const states = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}');
+    if (Object.keys(states).length) applyStates(states);
+  } catch {}
+}
+function updateProgress() {
+  const seen = new Set();
+  let total = 0, done = 0;
+  document.querySelectorAll('input[type=checkbox][data-id]').forEach(cb => {
+    const id = cb.dataset.id;
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    total++;
+    if (cb.checked) done++;
+  });
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-text').textContent = `${done} of ${total} tasks completed`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// ── Countdown ──
+function updateCountdown() {
+  const now = new Date();
+  const lastDay = new Date('2026-07-01T23:59:59');
+  const vrsar = new Date('2026-06-22T23:59:59');
+  const kamaljit65 = new Date('2028-03-13');
+  const d1 = Math.max(0, Math.ceil((lastDay - now) / 86400000));
+  const d2 = Math.max(0, Math.ceil((vrsar - now) / 86400000));
+  const dk = Math.ceil((kamaljit65 - now) / 86400000);
+  document.getElementById('cd-days').textContent = d1 > 0 ? d1 : '✓';
+  document.getElementById('cd-label').textContent = d1 > 0 ? 'days to July 1' : 'retired!';
+  document.getElementById('cd-vrsar').textContent = d2 > 0 ? d2 : '✓';
+  const kEl = document.getElementById('cd-kamaljit');
+  if (kEl) kEl.textContent = dk > 0 ? dk : '✓';
+}
+
+// ── Overdue detection ──
+// Deadline map: data-id -> ISO date string (null = no hard deadline)
+const DEADLINES = {
+  'sign_vrsar_at_aka_ms_vrp':          '2026-06-22',
+  'verify_your_home_address_is_curren': '2026-07-01',
+  'verify_your_home_address_is_current_in_e': '2026-07-01',
+  'download_your_stock_report_from_total_re': '2026-07-01',
+  'update_401_k_elections_at_fidelity_netbe': '2026-07-01',
+  'submit_all_perks_reimbursements_to_forma': '2026-07-01',
+  'register_with_adp_for_pay_stub_access':   '2026-07-01',
+  'note_your_personnel_number_42540':        '2026-07-01',
+  'submit_all_pending_expense_reports':      '2026-07-01',
+  'verify_direct_deposit_bank_accounts':     '2026-07-01',
+  'back_up_all_personal_files_from_work_dev':'2026-07-01',
+  'permanently_delete_copies_of_microsoft_p':'2026-07-01',
+  'remove_personal_device_from_intune_enrol':'2026-07-01',
+  'transfer_or_delete_azure_subscriptions':  '2026-07-01',
+  'set_out_of_office_message_inside_your_or':'2026-07-01',
+  'cancel_or_reassign_recurring_meetings_yo':'2026-07-01',
+  'return_laptop_and_all_hardware_to_manage':'2026-07-01',
+  'return_all_physical_access_items':        '2026-07-01',
+  'discuss_transition_plan_with_manager':    '2026-07-01',
+  'review_document_retention_policy_complia':'2026-07-01',
+  'download_notice_of_creditable_coverage':  '2026-07-01',
+  'if_age_65_download_personalized_cms_l564':'2026-07-01',
+  'use_up_fsa_balance_or_plan_cobra_continu':'2026-07-01',
+  'enroll_in_cobra_within_60_days_by_aug_31':'2026-08-31',
+  'confirm_lump_sum_payment_received':       '2026-07-31',
+  'update_personal_email_with_bsc_cobra_adm':'2026-08-01',
+  'confirm_adp_access_for_pay_stubs':        '2026-08-01',
+  'contact_metlife_within_60_days_to_contin':'2026-09-01',
+  'set_up_fidelity_e_trade_brokerage_access':'2026-08-01',
+  'review_dcp_distribution_timing':          '2026-08-01',
+  'verify_fy26_annual_bonus_in_september_20':'2026-10-01',
+  'confirm_july_microsoft_hsa_contribution_':'2026-08-15',
+  'first_post_retirement_vest_aug_31_2026_1':'2026-08-31',
+  'mark_calendar_cobra_premiums_begin_july_':'2027-07-01',
+  // Medicare tasks
+  'kamaljit_medicare_initial_enrollment':    '2028-02-13',
+  'contact_medicare_counselor_6mo_before_ka':'2027-09-13',
+  'davinder_medicare_initial_enrollment':    '2029-09-24',
+  'contact_medicare_counselor_6mo_before_da':'2029-04-24',
+};
+
+function markOverdue() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  document.querySelectorAll('input[type=checkbox][data-id]').forEach(cb => {
+    const id = cb.dataset.id;
+    const deadline = DEADLINES[id];
+    const li = cb.closest('li');
+    if (deadline) {
+      const d = new Date(deadline);
+      if (d < today) {
+        li.classList.add('overdue');
+      }
+    }
+  });
+}
+
+// ── Init ──
+buildVestChart();
+markOverdue();
+updateCountdown();
+setInterval(updateCountdown, 60000);
+
+(async () => {
+  if (!window.showSaveFilePicker) {
+    // Browser lacks File System Access API (e.g. Safari) — use localStorage only
+    setSaveUI('noapi');
+    try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyStates(s); } catch {}
+    updateProgress();
+    return;
+  }
+  const h = await idbGetHandle();
+  if (h) {
+    const perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      fileHandle = h;
+      const data = await fsRead();
+      if (data && Object.keys(data).length) { applyStates(data); updateProgress(); setSaveUI('ready'); return; }
+      setSaveUI('ready');
+    } else {
+      setSaveUI('prompt'); // handle exists but needs one click to re-grant permission
+    }
+  } else {
+    setSaveUI('none'); // first time — prompt user to set up OneDrive sync
+  }
+  // Fallback: localStorage (pre-file-setup or while waiting for permission)
+  try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyStates(s); } catch {}
+  updateProgress();
+})();
+</script>
+
+<div id="save-pill">
+  <span class="pill-status" id="save-status">💾 loading…</span>
+  <button onclick="exportJSON()">Export JSON</button>
+  <button onclick="document.getElementById('import-input').click()">Import JSON</button>
+  <input type="file" id="import-input" accept=".json" onchange="importJSON(event)">
+</div>
+</body>
+</html>
