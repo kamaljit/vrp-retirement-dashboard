@@ -163,6 +163,56 @@
   #save-pill button:hover { border-color: var(--accent); color: var(--accent); }
   #save-pill input[type=file] { display: none; }
 
+  /* ── Add Task FAB + Panel ── */
+  .fab-btn {
+    position: fixed; bottom: 60px; right: 16px; z-index: 101;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent); border: none; color: #fff;
+    font-size: 22px; line-height: 1; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, transform .15s;
+  }
+  .fab-btn:hover { background: #3a7ae8; transform: scale(1.1); }
+  .add-overlay {
+    position: fixed; inset: 0; z-index: 199;
+    background: rgba(0,0,0,.45); display: none;
+  }
+  .add-overlay.open { display: block; }
+  .add-panel {
+    position: fixed; bottom: 0; left: 50%;
+    transform: translateX(-50%) translateY(110%);
+    z-index: 200; width: min(640px, 100vw);
+    background: var(--surface); border: 1px solid var(--border);
+    border-bottom: none; border-radius: 14px 14px 0 0;
+    padding: 22px 24px 28px;
+    box-shadow: 0 -6px 28px rgba(0,0,0,.5);
+    transition: transform .25s ease;
+  }
+  .add-panel.open { transform: translateX(-50%) translateY(0); }
+  .ap-head { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .ap-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0; line-height: 1; }
+  .ap-close:hover { color: var(--text); }
+  .ap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .ap-grid.full { grid-template-columns: 1fr; }
+  .ap-group label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin-bottom: 5px; }
+  .ap-group input, .ap-group select {
+    width: 100%; box-sizing: border-box;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 7px; padding: 8px 11px;
+    font-size: 13px; font-family: inherit; outline: none;
+  }
+  .ap-group input:focus, .ap-group select:focus { border-color: var(--accent); }
+  .ap-group select option { background: var(--surface2); }
+  .ap-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .ap-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 7px; padding: 8px 18px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .ap-cancel:hover { color: var(--text); border-color: var(--text); }
+  .ap-submit { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 8px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .ap-submit:hover { background: #3a7ae8; }
+  .delete-custom-btn { background: none; border: none; color: var(--small); cursor: pointer; font-size: 17px; padding: 0 3px; line-height: 1; flex-shrink: 0; border-radius: 4px; }
+  .delete-custom-btn:hover { color: var(--red); background: rgba(224,86,86,.12); }
+  @media (max-width: 680px) { .ap-grid { grid-template-columns: 1fr; } }
+
 </style>
 </head>
 <body>
@@ -922,7 +972,7 @@ async function fsWrite() {
   if (!fileHandle) return;
   try {
     const w = await fileHandle.createWritable();
-    await w.write(JSON.stringify(getStates(), null, 2));
+    await w.write(JSON.stringify(getFullState(), null, 2));
     await w.close();
     setSaveUI('saved');
     setTimeout(() => setSaveUI('ready'), 2000);
@@ -956,7 +1006,7 @@ async function pickSaveFile() {
     await idbPutHandle(h);
     // Read first — if existing data found (second-laptop setup), load it; otherwise write current state
     const existing = await fsRead();
-    if (existing && Object.keys(existing).length) { applyStates(existing); updateProgress(); }
+    if (existing && Object.keys(existing).length) { applyLoadedData(existing); updateProgress(); }
     else { await fsWrite(); }
     setSaveUI('ready');
   } catch(e) { if (e.name !== 'AbortError') console.warn(e); }
@@ -970,7 +1020,7 @@ async function resumePermission() {
     if (p === 'granted') {
       fileHandle = h;
       const data = await fsRead();
-      if (data && Object.keys(data).length) { applyStates(data); updateProgress(); }
+      if (data && Object.keys(data).length) { applyLoadedData(data); updateProgress(); }
       setSaveUI('ready');
     }
   } catch(e) { console.warn(e); }
@@ -1047,20 +1097,174 @@ function syncDerivedUI() {
     { cls: 'tl-item future', date: '~Aug 31, 2026', title: 'COBRA enrollment deadline', titleColor: '', desc: 'Check your packet for exact date. Missing = permanent loss of all 5 years coverage + subsidy.' });
 }
 
+// ── Custom Items ──
+let customItems = [];
+
+const CUSTOM_CATS = {
+  'todo-before': [
+    '🔴 Urgent — Time-Critical',
+    '📋 Administrative',
+    '💻 Technology & Data',
+    '📦 Equipment Return',
+    '🤝 Work Transition',
+    '🏥 Healthcare & Benefits Prep',
+  ],
+  'todo-after': [
+    '🔴 Critical — First 60 Days',
+    '📋 First Month',
+    '💰 Financial',
+    '📈 Stock Vesting (Ongoing)',
+    '🏥 Healthcare Monitoring',
+    '🏥 Your Medicare — Kamaljit turns 65 on March 13, 2028',
+    "🏥 Davinder's Medicare — Davinder turns 65 on Oct 24, 2029",
+  ]
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showAddPanel() {
+  updateCatList();
+  clearApForm();
+  document.getElementById('add-overlay').classList.add('open');
+  document.getElementById('add-panel').classList.add('open');
+  setTimeout(() => document.getElementById('ap-title').focus(), 50);
+}
+
+function hideAddPanel() {
+  document.getElementById('add-overlay').classList.remove('open');
+  document.getElementById('add-panel').classList.remove('open');
+}
+
+function updateCatList() {
+  const tab = document.getElementById('ap-tab').value;
+  const sel = document.getElementById('ap-cat');
+  const builtIn = CUSTOM_CATS[tab] || [];
+  const userCats = [...new Set(
+    customItems.filter(i => i.tab === tab && !builtIn.includes(i.category)).map(i => i.category)
+  )];
+  const all = [...builtIn, ...userCats];
+  sel.innerHTML = all.map(c => `<option value="${escHtml(c)}">${c}</option>`).join('') +
+    '<option value="__new__">＋ New category…</option>';
+  handleCatChange();
+}
+
+function handleCatChange() {
+  const isNew = document.getElementById('ap-cat').value === '__new__';
+  document.getElementById('ap-newcat-row').style.display = isNew ? '' : 'none';
+}
+
+function syncApBadge() {
+  const d = document.getElementById('ap-date').value;
+  if (!d) return;
+  const dt = new Date(d + 'T12:00:00');
+  document.getElementById('ap-badge').value = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function clearApForm() {
+  ['ap-title','ap-desc','ap-date','ap-badge','ap-newcat'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ap-newcat-row').style.display = 'none';
+}
+
+function submitAddTask() {
+  const title = document.getElementById('ap-title').value.trim();
+  if (!title) { document.getElementById('ap-title').focus(); return; }
+  const tab = document.getElementById('ap-tab').value;
+  let category = document.getElementById('ap-cat').value;
+  if (category === '__new__') {
+    category = document.getElementById('ap-newcat').value.trim();
+    if (!category) { document.getElementById('ap-newcat').focus(); return; }
+  }
+  const item = {
+    id: 'custom_' + Date.now(),
+    tab, category,
+    title,
+    desc: document.getElementById('ap-desc').value.trim(),
+    date: document.getElementById('ap-date').value,
+    badge: document.getElementById('ap-badge').value.trim(),
+  };
+  customItems.push(item);
+  renderCustomItem(item);
+  saveState();
+  updateProgress();
+  hideAddPanel();
+  // Switch to the tab where the item was added
+  const navBtn = Array.from(document.querySelectorAll('nav button')).find(b => (b.getAttribute('onclick') || '').includes(`'${tab}'`));
+  if (navBtn) switchTab(tab, navBtn);
+}
+
+function findOrCreateCatList(tabId, categoryLabel) {
+  const tab = document.getElementById(tabId);
+  if (!tab) return null;
+  for (const card of tab.querySelectorAll('.card')) {
+    const titleEl = card.querySelector('.subsection-title');
+    if (titleEl && titleEl.textContent.trim() === categoryLabel.trim()) {
+      let ul = card.querySelector('ul.checklist');
+      if (!ul) { ul = document.createElement('ul'); ul.className = 'checklist'; card.appendChild(ul); }
+      return ul;
+    }
+  }
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="subsection-title">${escHtml(categoryLabel)}</div><ul class="checklist"></ul>`;
+  tab.appendChild(card);
+  return card.querySelector('ul.checklist');
+}
+
+function renderCustomItem(item) {
+  if (document.querySelector(`input[data-id="${CSS.escape(item.id)}"]`)) return;
+  const list = findOrCreateCatList(item.tab, item.category);
+  if (!list) return;
+  const li = document.createElement('li');
+  li.dataset.customId = item.id;
+  li.innerHTML =
+    `<input type="checkbox" data-id="${escHtml(item.id)}" onchange="handleCheck(this)">` +
+    `<div class="item-text"><strong>${escHtml(item.title)}</strong>` +
+    (item.desc ? `<span>${escHtml(item.desc)}</span>` : '') + `</div>` +
+    (item.badge ? `<span class="badge badge-amber">${escHtml(item.badge)}</span>` : '') +
+    `<button class="delete-custom-btn" onclick="deleteCustomItem('${escHtml(item.id)}')" title="Remove task">×</button>`;
+  list.appendChild(li);
+}
+
+function deleteCustomItem(id) {
+  const li = document.querySelector(`li[data-custom-id="${id}"]`);
+  if (li) li.remove();
+  customItems = customItems.filter(i => i.id !== id);
+  saveState();
+  updateProgress();
+}
+
+function getFullState() {
+  return { v: 2, states: getStates(), custom: customItems };
+}
+
+function applyLoadedData(data) {
+  if (!data || !Object.keys(data).length) return;
+  if (data.v === 2) {
+    customItems = data.custom || [];
+    customItems.forEach(item => renderCustomItem(item));
+    if (data.states) applyStates(data.states);
+  } else {
+    applyStates(data); // legacy flat format
+  }
+}
+
 // ── Export / Import ──
 function exportJSON() {
-  const blob = new Blob([JSON.stringify(getStates(), null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(getFullState(), null, 2)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'vrp_todo_state.json' });
   a.click(); URL.revokeObjectURL(a.href);
 }
 function importJSON(e) {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = async ev => {
+  reader.onload = ev => {
     try {
-      const s = JSON.parse(ev.target.result);
-      applyStates(s);
-      await saveState();
+      applyLoadedData(JSON.parse(ev.target.result));
+      saveState();
       updateProgress();
     } catch { alert('Invalid JSON file.'); }
   };
@@ -1081,19 +1285,18 @@ function handleCheck(cb) {
   updateProgress();
 }
 function saveState() {
-  const states = getStates();
-  try { localStorage.setItem('vrp_2026_v2', JSON.stringify(states)); } catch {}
+  try { localStorage.setItem('vrp_2026_v2', JSON.stringify(getFullState())); } catch {}
   fsWrite(); // async, fire-and-forget; setSaveUI handled inside fsWrite
 }
 async function loadState() {
   if (fileHandle) {
     const data = await fsRead();
-    if (data && Object.keys(data).length) { applyStates(data); return; }
+    if (data && Object.keys(data).length) { applyLoadedData(data); return; }
   }
   // Fallback: localStorage
   try {
-    const states = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}');
-    if (Object.keys(states).length) applyStates(states);
+    const saved = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}');
+    if (Object.keys(saved).length) applyLoadedData(saved);
   } catch {}
 }
 function updateProgress() {
@@ -1198,7 +1401,7 @@ setInterval(updateCountdown, 60000);
   if (!window.showSaveFilePicker) {
     // Browser lacks File System Access API (e.g. Safari) — use localStorage only
     setSaveUI('noapi');
-    try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyStates(s); } catch {}
+    try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyLoadedData(s); } catch {}
     updateProgress();
     return;
   }
@@ -1208,7 +1411,7 @@ setInterval(updateCountdown, 60000);
     if (perm === 'granted') {
       fileHandle = h;
       const data = await fsRead();
-      if (data && Object.keys(data).length) { applyStates(data); updateProgress(); setSaveUI('ready'); return; }
+      if (data && Object.keys(data).length) { applyLoadedData(data); updateProgress(); setSaveUI('ready'); return; }
       setSaveUI('ready');
     } else {
       setSaveUI('prompt'); // handle exists but needs one click to re-grant permission
@@ -1217,7 +1420,7 @@ setInterval(updateCountdown, 60000);
     setSaveUI('none'); // first time — prompt user to set up OneDrive sync
   }
   // Fallback: localStorage (pre-file-setup or while waiting for permission)
-  try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyStates(s); } catch {}
+  try { const s = JSON.parse(localStorage.getItem('vrp_2026_v2') || '{}'); if (Object.keys(s).length) applyLoadedData(s); } catch {}
   updateProgress();
 })();
 </script>
@@ -1227,6 +1430,57 @@ setInterval(updateCountdown, 60000);
   <button onclick="exportJSON()">Export JSON</button>
   <button onclick="document.getElementById('import-input').click()">Import JSON</button>
   <input type="file" id="import-input" accept=".json" onchange="importJSON(event)">
+</div>
+
+<button class="fab-btn" onclick="showAddPanel()" title="Add new task">+</button>
+<div id="add-overlay" class="add-overlay" onclick="hideAddPanel()"></div>
+<div id="add-panel" class="add-panel">
+  <div class="ap-head">Add New Task <button class="ap-close" onclick="hideAddPanel()">✕</button></div>
+  <div class="ap-grid">
+    <div class="ap-group">
+      <label>Tab</label>
+      <select id="ap-tab" onchange="updateCatList()">
+        <option value="todo-before">✅ Before July 1</option>
+        <option value="todo-after">📋 After Retiring</option>
+      </select>
+    </div>
+    <div class="ap-group">
+      <label>Category</label>
+      <select id="ap-cat" onchange="handleCatChange()"></select>
+    </div>
+  </div>
+  <div class="ap-grid full" id="ap-newcat-row" style="display:none">
+    <div class="ap-group">
+      <label>New Category Name</label>
+      <input id="ap-newcat" type="text" placeholder="e.g. 🏦 Tax Planning" />
+    </div>
+  </div>
+  <div class="ap-grid full">
+    <div class="ap-group">
+      <label>Title *</label>
+      <input id="ap-title" type="text" placeholder="What needs to be done?" />
+    </div>
+  </div>
+  <div class="ap-grid full">
+    <div class="ap-group">
+      <label>Description (optional)</label>
+      <input id="ap-desc" type="text" placeholder="Additional details or notes" />
+    </div>
+  </div>
+  <div class="ap-grid">
+    <div class="ap-group">
+      <label>Target Date</label>
+      <input id="ap-date" type="date" onchange="syncApBadge()" />
+    </div>
+    <div class="ap-group">
+      <label>Badge Label</label>
+      <input id="ap-badge" type="text" placeholder="e.g. June 30" />
+    </div>
+  </div>
+  <div class="ap-actions">
+    <button class="ap-cancel" onclick="hideAddPanel()">Cancel</button>
+    <button class="ap-submit" onclick="submitAddTask()">Add Task</button>
+  </div>
 </div>
 </body>
 </html>
